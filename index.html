@@ -3,254 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yoonji's Portfolio Player (PC Ver.)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Pretendard:wght@400;700&display=swap" rel="stylesheet">
+    <title>Yoonji's Portfolio Player (Wide Ver.)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #8EC5FC;
             --secondary: #E0C3FC;
             --accent: #FF9A9E;
-            --dark: #4a4a4a;
-            --light: #fdfdfd;
+            --dark: #333;
             --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body {
-            font-family: 'Pretendard', sans-serif; /* 본문은 가독성 좋은 폰트 */
+            font-family: 'Pretendard', sans-serif;
             background-image: var(--bg-gradient);
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow: hidden; /* 화면 전체 스크롤 방지 */
         }
 
-        /* PC 앱 컨테이너 (PPT 비율 비슷하게) */
+        /* === 1. 메인 컨테이너 (더 넓게 수정됨!) === */
         #app-container {
-            width: 1200px;
-            height: 700px;
+            width: 1400px; /* 1200px -> 1400px 확장 */
+            max-width: 95vw; /* 화면 작으면 꽉 차게 */
+            height: 80vh; /* 높이도 화면 비율에 맞게 유동적 */
+            min-height: 700px;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 30px 60px rgba(0,0,0,0.15);
             display: grid;
-            grid-template-columns: 300px 1fr; /* 왼쪽 목록, 오른쪽 콘텐츠 */
-            grid-template-rows: 1fr 90px; /* 위 콘텐츠, 아래 플레이어 바 */
+            grid-template-columns: 320px 1fr; /* 사이드바 고정, 나머지 콘텐츠 */
+            grid-template-rows: 1fr 90px;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.6);
         }
 
-        /* === 1. 왼쪽 사이드바 (플레이리스트) === */
+        /* === 2. 왼쪽 사이드바 === */
         .sidebar {
             grid-row: 1 / 2;
             background: #f8f9fa;
-            border-right: 1px solid #eee;
+            border-right: 1px solid #e1e1e1;
             padding: 30px 20px;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         .brand {
             font-family: 'Gamja Flower', cursive;
-            font-size: 1.8rem;
+            font-size: 2rem;
             color: var(--dark);
             margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            padding-left: 10px;
         }
 
-        .track-list { display: flex; flex-direction: column; gap: 10px; }
+        .track-list { display: flex; flex-direction: column; gap: 8px; }
 
         .track-item {
-            padding: 15px;
+            padding: 16px;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 0.95rem;
+            gap: 15px;
+            font-size: 1rem;
             color: #666;
+            background: white;
+            border: 1px solid transparent;
         }
 
-        .track-item:hover { background: #eef2f5; }
+        .track-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
         
         .track-item.active {
             background: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(142, 197, 252, 0.3);
             color: var(--primary);
-            font-weight: bold;
-            border-left: 4px solid var(--primary);
+            font-weight: 700;
         }
 
         .track-item.locked {
             opacity: 0.5;
+            background: #eee;
             cursor: not-allowed;
-            background: transparent;
+            pointer-events: none; /* 클릭 방지 */
         }
+        /* JS에서 alert 띄우기 위해 pointer-events는 JS 제어로 변경하거나 위 CSS 제거 가능 */
 
-        /* === 2. 메인 콘텐츠 영역 (오른쪽) === */
+        /* === 3. 메인 콘텐츠 영역 (레이아웃 개선) === */
         .main-content {
             grid-column: 2 / 3;
-            padding: 40px;
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 이미지 반, 텍스트 반 */
+            padding: 40px 50px;
+            display: flex; /* Grid 대신 Flex로 변경하여 유동성 확보 */
             gap: 40px;
             overflow-y: auto;
+            align-items: flex-start; /* 위쪽 정렬 */
+            height: 100%;
         }
 
-        /* 이미지 슬라이더 영역 */
+        /* 이미지 슬라이더 영역 (핵심 수정!) */
+        .gallery-wrapper {
+            flex: 1.2; /* 공간 비중을 텍스트보다 조금 더 줌 */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: sticky; /* 스크롤 내려도 이미지는 보이게 하려면 sticky (선택사항) */
+            top: 0;
+        }
+
         .gallery-container {
             position: relative;
             width: 100%;
-            height: 400px; /* 이미지 높이 고정 */
+            height: 550px; /* 높이 대폭 증가 */
+            background: #000; /* 이미지 빈 공간은 검정(또는 회색) 처리 */
             border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            background: #eee;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center; /* 이미지 중앙 정렬 */
+            align-items: center;
         }
 
         .gallery-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* 꽉 차게 */
-            display: none; /* 기본 숨김 */
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain; /* [중요] 이미지가 잘리지 않고 비율 유지 */
+            display: none;
         }
-        .gallery-img.active { display: block; animation: fadeIn 0.5s; }
+        .gallery-img.active { display: block; animation: fadeIn 0.4s; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* 슬라이더 버튼 */
-        .slider-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255,255,255,0.7);
-            border: none;
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex; align-items: center; justify-content: center;
-            transition: 0.2s;
+        .slider-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 5px;
         }
-        .slider-btn:hover { background: white; }
-        .prev-btn { left: 10px; }
-        .next-btn { right: 10px; }
+        .slider-btn {
+            background: white; border: 1px solid #ddd;
+            padding: 8px 20px; border-radius: 20px; cursor: pointer;
+            font-weight: bold; color: #555; transition: 0.2s;
+        }
+        .slider-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* 텍스트 내용 영역 */
+
+        /* 텍스트 영역 */
         .text-content {
+            flex: 1; /* 나머지 공간 차지 */
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            padding-top: 10px;
         }
 
-        .content-header { margin-bottom: 20px; border-bottom: 2px solid var(--secondary); padding-bottom: 15px; }
-        .track-genre { font-size: 0.9rem; color: var(--accent); font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
-        .track-main-title { font-family: 'Gamja Flower', cursive; font-size: 2.5rem; color: var(--dark); line-height: 1.2; }
+        .content-header { 
+            margin-bottom: 25px; 
+            border-bottom: 3px solid var(--secondary); 
+            padding-bottom: 20px; 
+        }
+        
+        .track-genre { 
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            margin-bottom: 10px; 
+        }
+        
+        .track-main-title { 
+            font-family: 'Gamja Flower', cursive; 
+            font-size: 3rem; 
+            color: var(--dark); 
+            line-height: 1.1; 
+        }
         
         .lyrics-body {
-            font-size: 1rem;
-            line-height: 1.7;
-            color: #555;
-            white-space: pre-line; /* 줄바꿈 적용 */
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 10px;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: #444;
+            white-space: pre-line;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 10px;
         }
 
-        /* 형광펜 효과 */
         .highlight {
-            background: linear-gradient(to top, var(--secondary) 30%, transparent 30%);
+            background: linear-gradient(to top, #fffd8d 40%, transparent 40%);
             font-weight: bold;
-            color: #333;
+            padding: 0 4px;
         }
 
-        /* === 3. 하단 플레이어 바 === */
+        /* === 4. 하단 플레이어 바 === */
         .bottom-bar {
             grid-column: 1 / 3;
             background: white;
             border-top: 1px solid #eee;
             display: flex;
             align-items: center;
-            padding: 0 30px;
+            padding: 0 40px;
             justify-content: space-between;
-            z-index: 10;
+            z-index: 100;
         }
 
         .current-track-info {
             display: flex;
             align-items: center;
-            gap: 15px;
-            width: 250px;
+            gap: 20px;
+            width: 300px;
         }
-        .mini-cover { width: 50px; height: 50px; border-radius: 8px; background: #ddd; object-fit: cover; }
-        .mini-text h4 { font-size: 1rem; color: var(--dark); margin-bottom: 3px; }
-        .mini-text p { font-size: 0.8rem; color: #888; }
+        .mini-cover { 
+            width: 55px; height: 55px; 
+            border-radius: 8px; 
+            background: #eee; 
+            object-fit: cover; /* 썸네일은 꽉 차게 */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .mini-text h4 { font-size: 1.1rem; color: var(--dark); margin-bottom: 4px; }
+        .mini-text p { font-size: 0.9rem; color: #888; }
 
-        /* 재생바 영역 */
         .progress-area {
             flex: 1;
-            margin: 0 40px;
+            margin: 0 60px;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
-        .time-text { font-size: 0.8rem; color: #888; font-variant-numeric: tabular-nums; }
+        .time-text { font-family: monospace; font-size: 0.9rem; color: #666; }
         
         .progress-bg {
-            flex: 1;
-            height: 6px;
-            background: #eee;
-            border-radius: 3px;
-            position: relative;
+            flex: 1; height: 8px; background: #eee; border-radius: 4px; position: relative; cursor: default;
         }
         .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            border-radius: 3px;
-            width: 0%; /* JS로 제어 */
-            transition: width 1s ease-in-out;
-            position: relative;
+            height: 100%; background: var(--bg-gradient); border-radius: 4px; width: 0%;
+            transition: width 0.5s ease-out; position: relative;
         }
-        /* 재생바 끝에 동그라미 */
         .progress-fill::after {
-            content: '';
-            position: absolute;
-            right: -6px; top: -3px;
-            width: 12px; height: 12px;
-            background: var(--primary);
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            content: ''; position: absolute; right: -8px; top: -4px;
+            width: 16px; height: 16px; background: white; border-radius: 50%;
+            border: 3px solid var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* 컨트롤 버튼 */
-        .controls {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        .ctrl-btn {
-            background: none; border: none; cursor: pointer;
-            font-size: 1.5rem; color: #888; transition: 0.2s;
-        }
-        .ctrl-btn:hover { color: var(--primary); transform: scale(1.1); }
-        .play-btn {
-            width: 45px; height: 45px;
-            background: var(--primary);
+        .controls { display: flex; gap: 25px; align-items: center; }
+        .ctrl-btn { background: none; border: none; cursor: pointer; font-size: 1.8rem; transition: 0.2s; }
+        .ctrl-btn:hover { transform: scale(1.1); }
+        
+        .play-btn-circle {
+            width: 50px; height: 50px;
+            background: var(--dark);
             color: white;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.2rem;
-            box-shadow: 0 4px 10px rgba(142, 197, 252, 0.5);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        .play-btn:hover { background: #7ab3ea; color: white; }
+        .play-btn-circle:hover { background: var(--primary); transform: scale(1.05); }
 
-        /* 스크롤바 커스텀 */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+        /* 스크롤바 */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
 
     </style>
@@ -259,24 +280,26 @@
 
     <div id="app-container">
         <div class="sidebar">
-            <div class="brand">
-                <span>💿 Yoonji's Portfolio</span>
-            </div>
-            <div class="track-list" id="track-list">
-                </div>
+            <div class="brand">💿 My Portfolio</div>
+            <div class="track-list" id="track-list"></div>
         </div>
 
         <div class="main-content">
-            <div class="gallery-container">
-                <div id="gallery-wrapper">
-                    </div>
-                <button class="slider-btn prev-btn" onclick="prevImage()">❮</button>
-                <button class="slider-btn next-btn" onclick="nextImage()">❯</button>
+            <div class="gallery-wrapper">
+                <div class="gallery-container">
+                    <div id="gallery-inner">
+                        </div>
+                </div>
+                <div class="slider-controls">
+                    <button class="slider-btn" onclick="prevImage()">❮ Prev</button>
+                    <span id="img-counter" style="line-height: 35px; color:#888; font-size:0.9rem;">1 / 2</span>
+                    <button class="slider-btn" onclick="nextImage()">Next ❯</button>
+                </div>
             </div>
 
             <div class="text-content">
                 <div class="content-header">
-                    <div class="track-genre" id="track-genre">Genre</div>
+                    <span class="track-genre" id="track-genre">Genre</span>
                     <h1 class="track-main-title" id="track-title">Title</h1>
                 </div>
                 <div class="lyrics-body" id="track-desc">
@@ -286,9 +309,9 @@
 
         <div class="bottom-bar">
             <div class="current-track-info">
-                <img src="" id="mini-cover" class="mini-cover" alt="">
+                <img src="" id="mini-cover" class="mini-cover">
                 <div class="mini-text">
-                    <h4 id="mini-title">Title</h4>
+                    <h4 id="mini-title">Track Title</h4>
                     <p>이윤지 (Yoonji)</p>
                 </div>
             </div>
@@ -302,48 +325,49 @@
             </div>
 
             <div class="controls">
-                <button class="ctrl-btn" title="합격! (좋아요)">👍</button>
-                <button class="ctrl-btn play-btn" onclick="playNextTrack()">
-                    ▶
-                </button>
+                <button class="ctrl-btn" onclick="handlePass(this)" title="합격!">👍</button>
+                <button class="ctrl-btn play-btn-circle" onclick="playNextTrack()">▶</button>
             </div>
         </div>
     </div>
 
     <script>
-        // === 1. 포트폴리오 데이터 설정 (이미지는 배열로 여러 개!) ===
+        // === 데이터 설정 ===
         const tracks = [
             {
                 title: "Intro: Ready to Play",
                 genre: "Artist Profile",
                 description: `안녕하세요! 팬덤의 언어를 이해하는 마케터 이윤지입니다.
+
+                이 포트폴리오는 저의 <span class="highlight">기획력과 실행력</span>을 보여주는 플레이리스트입니다. 
                 
-                이 포트폴리오는 저의 <span class="highlight">기획력과 실행력</span>을 보여주는 플레이리스트입니다.
-                하나씩 트랙을 넘기며 저의 이야기를 들어주세요!`,
+                오른쪽(또는 위)의 Next 버튼을 눌러 다음 트랙을 해금하며 감상해주세요!
+                (이미지가 여러 장인 경우 아래 화살표로 넘겨볼 수 있습니다)`,
                 images: [
-                    "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=600&h=400&fit=crop", // 프로필 사진 느낌
-                    "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=600&h=400&fit=crop"  // 작업실/책상 느낌
+                    "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=800&fit=crop", 
+                    "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800&fit=crop"
                 ],
-                endTime: "0:30" // 재생바가 멈출 위치
+                endTime: "0:30"
             },
             {
                 title: "Track 01. Love to Work",
-                genre: "Social Media & Contents",
+                genre: "Social Media",
                 description: `<b>Credits:</b> Directed by 이윤지 (100%)
-                <b>Skill:</b> 트렌드 분석, 콘텐츠 큐레이션
-
+                
                 일본어 학습과 아이돌 덕질을 결합한 인스타그램 채널 운영.
                 <span class="highlight">2개월 만에 팔로워 1.6만 달성.</span>
-                단순 학습이 아닌 '쉐도잉 숏폼'으로 체류 시간을 늘렸습니다.`,
+                
+                단순 학습이 아닌 '쉐도잉 숏폼'으로 체류 시간을 늘렸습니다.
+                상세 페이지 이미지를 통해 실제 콘텐츠 반응을 확인해보세요.`,
                 images: [
-                    "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=600&h=400&fit=crop", // 인스타 느낌
-                    "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=600&h=400&fit=crop"
+                    "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&fit=crop",
+                    "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&fit=crop" // 세로 긴 이미지 테스트용
                 ],
                 endTime: "1:20"
             },
             {
                 title: "Track 02. 밈을 요리하는 법",
-                genre: "Creative & Edit",
+                genre: "Creative Content",
                 description: `<b>Genre:</b> Short-form Video
                 
                 '집중력 테스트' 릴스로 <span class="highlight">조회수 140만 회</span> 기록.
@@ -351,154 +375,152 @@
                 
                 트렌드 밈을 빠르게 캐치하여 브랜드/아티스트 무드에 맞게 변형합니다.`,
                 images: [
-                    "https://images.unsplash.com/photo-1621360841012-3f82476b7724?w=600&h=400&fit=crop", // 영상 편집 느낌
-                    "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=600&h=400&fit=crop"
+                    "https://images.unsplash.com/photo-1621360841012-3f82476b7724?w=800&fit=crop",
+                    "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&fit=crop"
                 ],
                 endTime: "2:40"
             },
             {
                 title: "Outro: Next Stage",
-                genre: "Vision & Ambition",
+                genre: "Vision",
                 description: `이제 저의 무대는 <b>Mnet Plus</b>입니다.
                 
                 혼자만의 연습실이 아닌, 전문가들과 함께 더 큰 무대를 만들고 싶습니다.
                 끝까지 들어주셔서 감사합니다! (All Tracks Unlocked 🔓)`,
                 images: [
-                    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&h=400&fit=crop", // 무대/조명 느낌
-                    "https://images.unsplash.com/photo-1514525253440-b393452e3383?w=600&h=400&fit=crop"
+                    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&fit=crop"
                 ],
                 endTime: "4:00"
             }
         ];
 
-        // === 2. 상태 변수 ===
         let currentTrackIdx = 0;
         let unlockedTrackIdx = 0;
         let currentImageIdx = 0;
 
-        // === 3. 초기화 및 렌더링 ===
         function init() {
             renderTrackList();
             loadTrack(0);
         }
 
-        // 왼쪽 플레이리스트 그리기
         function renderTrackList() {
             const list = document.getElementById('track-list');
             list.innerHTML = '';
-
             tracks.forEach((track, idx) => {
                 const div = document.createElement('div');
                 div.className = `track-item ${idx === currentTrackIdx ? 'active' : ''} ${idx > unlockedTrackIdx ? 'locked' : ''}`;
                 
-                // 잠김 상태 아이콘 처리
                 const icon = idx > unlockedTrackIdx ? '🔒' : (idx === currentTrackIdx ? '💿' : (idx + 1));
                 
-                div.innerHTML = `
-                    <span style="font-weight:bold; width:20px; text-align:center;">${icon}</span>
-                    <span>${track.title}</span>
-                `;
-
-                // 클릭 이벤트 (잠겨있으면 경고)
-                div.onclick = () => {
-                    if (idx > unlockedTrackIdx) {
-                        alert("이전 트랙을 먼저 완료해주세요! (Next 버튼 클릭)");
-                        return;
-                    }
-                    currentTrackIdx = idx;
-                    loadTrack(idx);
-                    renderTrackList(); // active 상태 갱신
-                };
+                div.innerHTML = `<span style="font-weight:bold; width:20px; text-align:center;">${icon}</span><span>${track.title}</span>`;
+                
+                if (idx <= unlockedTrackIdx) {
+                    div.onclick = () => {
+                        currentTrackIdx = idx;
+                        loadTrack(idx);
+                        renderTrackList();
+                    };
+                }
                 list.appendChild(div);
             });
         }
 
-        // 트랙 데이터 로드 (오른쪽 화면 & 플레이어 바)
         function loadTrack(index) {
             const track = tracks[index];
-            currentImageIdx = 0; // 이미지 초기화
-
-            // 1. 텍스트 정보 업데이트
+            currentImageIdx = 0;
+            
+            // 텍스트 업데이트
             document.getElementById('track-genre').innerText = track.genre;
             document.getElementById('track-title').innerText = track.title;
             document.getElementById('track-desc').innerHTML = track.description;
             
-            // 2. 하단 플레이어 정보 업데이트
+            // 하단 플레이어 업데이트
             document.getElementById('mini-title').innerText = track.title;
             document.getElementById('mini-cover').src = track.images[0];
             document.getElementById('current-time').innerText = track.endTime;
-
-            // 3. 재생바 길이 업데이트 (시간 문자열을 %로 변환하는 간단 로직)
+            
             updateProgressBar(track.endTime);
 
-            // 4. 이미지 슬라이더 업데이트
-            const gallery = document.getElementById('gallery-wrapper');
-            gallery.innerHTML = '';
-            track.images.forEach((imgUrl, i) => {
+            // 이미지 갤러리 로드
+            const galleryInner = document.getElementById('gallery-inner');
+            galleryInner.innerHTML = '';
+            track.images.forEach((url, i) => {
                 const img = document.createElement('img');
-                img.src = imgUrl;
+                img.src = url;
                 img.className = `gallery-img ${i === 0 ? 'active' : ''}`;
-                gallery.appendChild(img);
+                galleryInner.appendChild(img);
             });
+            updateImageCounter();
         }
 
-        // 시간(분:초)을 받아서 4분 기준 퍼센트로 변환
-        function updateProgressBar(timeStr) {
-            const [min, sec] = timeStr.split(':').map(Number);
-            const totalSeconds = 240; // 4분 (전체 앨범 길이 가정)
-            const currentSeconds = (min * 60) + sec;
-            
-            const percent = (currentSeconds / totalSeconds) * 100;
-            document.getElementById('progress-bar').style.width = percent + '%';
-        }
-
-        // === 4. 이미지 슬라이더 기능 ===
-        function showImage(idx) {
-            const images = document.querySelectorAll('.gallery-img');
-            images.forEach(img => img.classList.remove('active'));
-            images[idx].classList.add('active');
-            
-            // 하단 미니 커버도 현재 보고 있는 이미지로 변경
-            document.getElementById('mini-cover').src = images[idx].src;
+        function updateImageCounter() {
+            const total = tracks[currentTrackIdx].images.length;
+            document.getElementById('img-counter').innerText = `${currentImageIdx + 1} / ${total}`;
         }
 
         function nextImage() {
-            const max = tracks[currentTrackIdx].images.length - 1;
-            if (currentImageIdx < max) currentImageIdx++;
-            else currentImageIdx = 0; // 루프
-            showImage(currentImageIdx);
+            const imgs = document.querySelectorAll('.gallery-img');
+            imgs[currentImageIdx].classList.remove('active');
+            
+            if (currentImageIdx < imgs.length - 1) currentImageIdx++;
+            else currentImageIdx = 0;
+            
+            imgs[currentImageIdx].classList.add('active');
+            document.getElementById('mini-cover').src = imgs[currentImageIdx].src; // 썸네일도 변경
+            updateImageCounter();
         }
 
         function prevImage() {
-            const max = tracks[currentTrackIdx].images.length - 1;
+            const imgs = document.querySelectorAll('.gallery-img');
+            imgs[currentImageIdx].classList.remove('active');
+            
             if (currentImageIdx > 0) currentImageIdx--;
-            else currentImageIdx = max;
-            showImage(currentImageIdx);
+            else currentImageIdx = imgs.length - 1;
+            
+            imgs[currentImageIdx].classList.add('active');
+            document.getElementById('mini-cover').src = imgs[currentImageIdx].src;
+            updateImageCounter();
         }
 
-        // === 5. 다음 트랙 (Next 버튼) ===
+        function updateProgressBar(timeStr) {
+            const [min, sec] = timeStr.split(':').map(Number);
+            const totalSec = 240; 
+            const curSec = (min * 60) + sec;
+            document.getElementById('progress-bar').style.width = ((curSec / totalSec) * 100) + '%';
+        }
+
         function playNextTrack() {
-            // 마지막 트랙이면
             if (currentTrackIdx >= tracks.length - 1) {
-                alert("🎉 모든 트랙을 감상하셨습니다! 전체 잠금이 해제됩니다.");
+                alert("🎉 전체 다시보기가 해금되었습니다!");
                 unlockedTrackIdx = tracks.length;
                 renderTrackList();
                 return;
             }
-
-            // 다음 트랙 해금 및 이동
-            if (currentTrackIdx === unlockedTrackIdx) {
-                unlockedTrackIdx++;
-            }
-            
+            if (currentTrackIdx === unlockedTrackIdx) unlockedTrackIdx++;
             currentTrackIdx++;
             loadTrack(currentTrackIdx);
             renderTrackList();
         }
 
-        // 시작
-        init();
+        function handlePass(btn) {
+            const emoji = document.createElement('div');
+            emoji.innerText = "👍";
+            emoji.style.position = "absolute";
+            emoji.style.fontSize = "2rem";
+            emoji.style.left = (btn.getBoundingClientRect().left) + "px";
+            emoji.style.top = (btn.getBoundingClientRect().top) + "px";
+            emoji.style.transition = "1s ease-out";
+            emoji.style.pointerEvents = "none";
+            document.body.appendChild(emoji);
+            
+            setTimeout(() => {
+                emoji.style.transform = "translateY(-100px) scale(1.5)";
+                emoji.style.opacity = "0";
+            }, 10);
+            setTimeout(() => emoji.remove(), 1000);
+        }
 
+        init();
     </script>
 </body>
 </html>

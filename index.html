@@ -3,64 +3,489 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yoonji's Playlist Portfolio</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Yoonji's Portfolio Player</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gamja+Flower&family=Nunito:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #8EC5FC; /* 파스텔 블루 */
+            --secondary-color: #E0C3FC; /* 파스텔 보라/핑크 */
+            --accent-color: #FF9A9E; /* 포인트 핑크 */
+            --text-color: #555;
+            --bg-gradient: linear-gradient(120deg, #E0C3FC 0%, #8EC5FC 100%);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            font-family: 'Gamja Flower', cursive; /* 귀여운 폰트 적용 */
+            background-image: var(--bg-gradient);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 스마트폰 목업 프레임 */
+        #app-container {
+            width: 375px;
+            height: 700px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+            border: 8px solid #fff;
+        }
+
+        /* 공통 헤더 */
+        header {
+            padding: 20px;
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* ==================== 
+           1. 플레이리스트 화면 
+           ==================== */
+        #playlist-view {
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            /* 스크롤바 숨기기 */
+            -ms-overflow-style: none; scrollbar-width: none;
+        }
+        #playlist-view::-webkit-scrollbar { display: none; }
+
+        .profile-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .profile-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #eee;
+            margin: 0 auto 10px;
+            border: 3px solid var(--primary-color);
+            object-fit: cover;
+        }
+
+        .track-list { display: flex; flex-direction: column; gap: 15px; }
+
+        .track-item {
+            display: flex;
+            align-items: center;
+            background: #fff;
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .track-item:hover { transform: translateY(-3px); }
+
+        .track-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background: #ddd;
+            margin-right: 15px;
+            overflow: hidden;
+        }
+        .track-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .track-info { flex: 1; }
+        .track-title { font-size: 1.1rem; font-weight: bold; color: #333; }
+        .track-artist { font-size: 0.9rem; color: #888; }
+
+        /* 잠김 상태 스타일 */
+        .track-item.locked {
+            opacity: 0.6;
+            filter: grayscale(100%);
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+        .track-item.locked::after {
+            content: '🔒';
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        /* ==================== 
+           2. 플레이어 화면 
+           ==================== */
+        #player-view {
+            position: absolute;
+            top: 100%; /* 아래에 숨겨둠 */
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            transition: top 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* 통통 튀는 애니메이션 */
+            z-index: 20;
+        }
+        
+        #player-view.active { top: 0; }
+
+        .back-btn {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+            background: none; border: none;
+        }
+
+        .player-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        /* 앨범 아트 (빙글빙글 돌아가는 효과) */
+        .album-art-container {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%; /* CD 모양 */
+            background: #000;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            border: 5px solid white;
+            animation: spin 10s linear infinite;
+            animation-play-state: paused; /* 기본 멈춤 */
+        }
+        .album-art-container.playing { animation-play-state: running; }
+        .album-art-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .current-info { text-align: center; margin-bottom: 20px; }
+        .current-title { font-size: 1.5rem; font-weight: bold; margin-bottom: 5px; }
+        .current-artist { color: var(--accent-color); font-size: 1.1rem; }
+
+        /* 가사(포트폴리오 내용) 영역 */
+        .lyrics-area {
+            width: 100%;
+            background: #f9f9f9;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #666;
+            text-align: left; /* 가독성을 위해 왼쪽 정렬 */
+            height: 200px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* 가사 하이라이팅 효과 */
+        .highlight {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .highlight:hover {
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        /* 컨트롤 패널 */
+        .controls {
+            width: 100%;
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .progress-bar-bg {
+            width: 100%; height: 6px; background: #eee; border-radius: 3px;
+        }
+        .progress-bar-fill {
+            width: 0%; height: 100%; background: var(--bg-gradient); border-radius: 3px;
+            transition: width 0.1s linear;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            border: none; background: none; cursor: pointer;
+            font-family: 'Gamja Flower'; font-size: 1.2rem;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.9); }
+
+        /* 합격 버튼 스타일 */
+        .pass-btn {
+            background: var(--accent-color);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pass-btn:hover { background: #ff7e84; }
+
+        .next-btn {
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        /* 합격 이모지 애니메이션 */
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            animation: floatUp 1.5s ease-out forwards;
+            pointer-events: none; /* 클릭 방지 */
+            z-index: 100;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+
+    </style>
 </head>
 <body>
 
-    <div class="mobile-container">
-        <div class="status-bar">
-            <span>11:08</span> <div class="icons">
-                <i class="fa-solid fa-signal"></i>
-                <i class="fa-solid fa-wifi"></i>
-                <i class="fa-solid fa-battery-full"></i>
+    <div id="app-container">
+        
+        <div id="playlist-view">
+            <header>Yoonji's Playlist 🎧</header>
+            
+            <div class="profile-section">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop" class="profile-img" alt="Profile">
+                <h2>신입 마케터 이윤지</h2>
+                <p style="color: #888;">#NCT_WISH #콘텐츠_마케팅 #덕업일치</p>
             </div>
+
+            <div class="track-list" id="track-list-container">
+                </div>
         </div>
 
-        <div class="player-area">
-            <div class="album-cover-wrapper">
-                <img src="https://via.placeholder.com/300" alt="Album Art" class="album-art" id="albumArt">
-                <div class="vinyl-center"></div>
-            </div>
+        <div id="player-view">
+            <button class="back-btn" onclick="closePlayer()">↓</button>
             
-            <div class="track-info">
-                <h2 id="currentTitle">Love to Work</h2>
-                <p id="currentArtist">Artist. 이윤지</p>
+            <div class="player-content">
+                <div class="album-art-container" id="album-art-container">
+                    <img id="player-img" class="album-art-img" src="" alt="Album Art">
+                </div>
+
+                <div class="current-info">
+                    <div id="player-title" class="current-title">Track Title</div>
+                    <div id="player-artist" class="current-artist">이윤지 (Yoonji)</div>
+                </div>
+
+                <div id="player-lyrics" class="lyrics-area">
+                    </div>
             </div>
 
             <div class="controls">
-                <i class="fa-solid fa-backward-step"></i>
-                <button class="play-btn" id="playBtn">
-                    <i class="fa-solid fa-play" id="playIcon"></i>
-                </button>
-                <i class="fa-solid fa-forward-step"></i>
-            </div>
-        </div>
+                <div class="progress-bar-bg">
+                    <div id="progress-bar" class="progress-bar-fill"></div>
+                </div>
+                
+                <div class="buttons">
+                    <button class="btn pass-btn" onclick="handlePass(event)">
+                        👍 합격 (Pass)
+                    </button>
 
-        <div class="playlist-container">
-            <h3>Coming Up Next</h3>
-            <ul class="playlist" id="playlist">
-                </ul>
-        </div>
-    </div>
-
-    <div id="projectModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2 id="modalTitle">프로젝트 제목</h2>
-            <span class="badge" id="modalGenre">Genre</span>
-            <div class="modal-body">
-                <p id="modalDesc">상세 설명이 들어갑니다.</p>
-                <div class="skills" id="modalSkills"></div>
-                <div class="link-area">
-                    <a href="#" class="view-link">View Project ></a>
+                    <button class="btn next-btn" onclick="playNextTrack()">
+                        ⏭
+                    </button>
                 </div>
             </div>
         </div>
+
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        // === 1. 데이터 세팅 (여기에 윤지님 포트폴리오 내용을 수정해서 넣으세요!) ===
+        const tracks = [
+            {
+                title: "Intro: Ready to Play",
+                content: `안녕하세요! <span class='highlight'>팬덤의 언어</span>를 이해하고 콘텐츠로 소통하는 마케터 이윤지입니다.<br><br>
+                          이 플레이리스트는 저의 지난 프로젝트와 가능성을 담고 있습니다.<br>
+                          🎧 이어폰을 꽂듯, 저의 이야기에 귀 기울여 주세요!`,
+                img: "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?w=400&h=400&fit=crop"
+            },
+            {
+                title: "Track 01. Love to Work",
+                content: `Credits: Directed by 이윤지 (100%)<br><br>
+                          일본어 학습 채널을 운영하며 <span class='highlight'>2개월 만에 팔로워 1.6만 명</span>을 달성했습니다.<br><br>
+                          단순 번역이 아니라, 덕질과 학습을 결합한 <span class='highlight'>'쉐도잉 숏폼'</span> 콘텐츠로 유입을 유도했어요.`,
+                img: "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=400&h=400&fit=crop"
+            },
+            {
+                title: "Track 02. 밈을 요리하는 법",
+                content: `Genre: Creative & Edit<br><br>
+                          '집중력 테스트' 릴스로 <span class='highlight'>조회수 140만 회</span>를 기록했습니다.<br>
+                          단순 시청을 넘어, 사용자가 직접 화면을 캡쳐하고 참여하게 만드는 <span class='highlight'>'게이미피케이션'</span> 전략이 통했습니다.`,
+                img: "https://images.unsplash.com/photo-1621360841012-3f82476b7724?w=400&h=400&fit=crop"
+            },
+            {
+                title: "Outro: Next Stage",
+                content: `이제 저의 무대는 <span class='highlight'>Mnet Plus</span>입니다.<br><br>
+                          혼자만의 연습실이 아닌, 전문가들과 함께 더 큰 무대를 만들어보고 싶습니다.<br>
+                          지금까지 들어주셔서 감사합니다! (전체 다시보기가 해금되었습니다 ✨)`,
+                img: "https://images.unsplash.com/photo-1514525253440-b393452e3383?w=400&h=400&fit=crop"
+            }
+        ];
+
+        // === 2. 상태 관리 ===
+        let unlockedIndex = 0; // 현재 해금된 레벨 (0부터 시작)
+        let currentPlayingIndex = 0;
+        let progressInterval;
+
+        // === 3. 플레이리스트 렌더링 함수 ===
+        function renderPlaylist() {
+            const container = document.getElementById('track-list-container');
+            container.innerHTML = ''; // 초기화
+
+            tracks.forEach((track, index) => {
+                const div = document.createElement('div');
+                div.className = 'track-item';
+                
+                // 잠김 여부 체크
+                if (index > unlockedIndex) {
+                    div.classList.add('locked');
+                    div.onclick = () => alert("🚫 이전 트랙을 먼저 감상해주세요! (순서대로 해금됩니다)");
+                } else {
+                    div.onclick = () => openPlayer(index);
+                }
+
+                // HTML 구조 조립
+                div.innerHTML = `
+                    <div class="track-thumb">
+                        <img src="${track.img}" alt="cover">
+                    </div>
+                    <div class="track-info">
+                        <div class="track-title">${track.title}</div>
+                        <div class="track-artist">이윤지 (Yoonji)</div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // === 4. 플레이어 열기 ===
+        function openPlayer(index) {
+            currentPlayingIndex = index;
+            const track = tracks[index];
+
+            // 데이터 채우기
+            document.getElementById('player-title').innerText = track.title;
+            document.getElementById('player-img').src = track.img;
+            document.getElementById('player-lyrics').innerHTML = track.content; // HTML 태그 적용됨
+
+            // 화면 전환
+            document.getElementById('player-view').classList.add('active');
+            
+            // CD 회전 시작
+            document.getElementById('album-art-container').classList.add('playing');
+
+            // 프로그레스 바 시뮬레이션 (Reset & Start)
+            simulateProgressBar();
+        }
+
+        // === 5. 플레이어 닫기 ===
+        function closePlayer() {
+            document.getElementById('player-view').classList.remove('active');
+            document.getElementById('album-art-container').classList.remove('playing');
+            clearInterval(progressInterval); // 타이머 멈춤
+            renderPlaylist(); // 잠금 상태 업데이트를 위해 다시 그리기
+        }
+
+        // === 6. 다음 트랙 로직 (핵심!) ===
+        function playNextTrack() {
+            // 마지막 트랙인 경우
+            if (currentPlayingIndex >= tracks.length - 1) {
+                alert("🎉 모든 트랙을 감상하셨습니다! 전체 잠금이 해제됩니다.");
+                unlockedIndex = tracks.length; // 전부 해금
+                closePlayer();
+                return;
+            }
+
+            // 다음 단계 해금 (현재 보고 있는게 최신 해금 트랙일 경우에만 +1)
+            if (currentPlayingIndex === unlockedIndex) {
+                unlockedIndex++;
+            }
+
+            // 다음 곡 재생
+            openPlayer(currentPlayingIndex + 1);
+        }
+
+        // === 7. 합격 버튼 이펙트 (재미 요소) ===
+        function handlePass(event) {
+            const btn = event.currentTarget;
+            
+            // 이모지 생성
+            const emoji = document.createElement('div');
+            emoji.innerText = "👍";
+            emoji.className = 'floating-emoji';
+            
+            // 버튼 위치 기준으로 이모지 위치 잡기
+            const rect = btn.getBoundingClientRect();
+            // 랜덤한 X 위치 (버튼 너비 안에서)
+            const randomX = (Math.random() * rect.width);
+            
+            emoji.style.left = (rect.left + randomX) + 'px';
+            emoji.style.top = rect.top + 'px';
+            
+            document.body.appendChild(emoji);
+
+            // 애니메이션 끝나면 요소 삭제 (메모리 관리)
+            setTimeout(() => {
+                emoji.remove();
+            }, 1500);
+        }
+
+        // === 8. 프로그레스 바 자동 채움 (음악 듣는 척) ===
+        function simulateProgressBar() {
+            const bar = document.getElementById('progress-bar');
+            let width = 0;
+            bar.style.width = '0%';
+            
+            clearInterval(progressInterval); // 기존 타이머 제거
+            
+            progressInterval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(progressInterval);
+                } else {
+                    width += 0.5; // 속도 조절
+                    bar.style.width = width + '%';
+                }
+            }, 50); // 0.05초마다 업데이트
+        }
+
+        // 초기 실행
+        renderPlaylist();
+
+    </script>
 </body>
 </html>
